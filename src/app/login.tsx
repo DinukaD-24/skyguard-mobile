@@ -1,6 +1,8 @@
-import { View, Text, TextInput, Pressable } from 'react-native';
+import { View, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
+import Button from '@/components/Button';
+import Input from '@/components/Input';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -12,32 +14,31 @@ export default function LoginScreen() {
       <Text className="mb-1 text-3xl font-bold text-blue-600">Welcome Back</Text>
       <Text className="mb-8 text-gray-500">Login to SkyGuard</Text>
 
-      <TextInput
-        placeholder="Email"
+      <Input
+        label="Email"
+        placeholder="you@example.com"
         value={email}
         onChangeText={setEmail}
-        className="px-4 py-3 mb-4 border border-gray-300 rounded-lg"
         keyboardType="email-address"
         autoCapitalize="none"
       />
-      <TextInput
-        placeholder="Password"
+      <Input
+        label="Password"
+        placeholder="••••••••"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
-        className="px-4 py-3 mb-6 border border-gray-300 rounded-lg"
       />
 
-      <Pressable
-        className="items-center py-4 mb-4 bg-blue-600 rounded-lg"
+      <Button
+        title="Login"
         onPress={() => router.replace('/(tabs)')}
-      >
-        <Text className="font-bold text-white">Login</Text>
-      </Pressable>
+        style={{ marginTop: 8, marginBottom: 16 }}
+      />
 
-      <Pressable onPress={() => router.push('/register')}>
-        <Text className="text-center text-blue-600">Don't have an account? Register</Text>
-      </Pressable>
+      <Text className="text-center text-blue-600" onPress={() => router.push('/register')}>
+        Don't have an account? Register
+      </Text>
     </View>
   );
 }

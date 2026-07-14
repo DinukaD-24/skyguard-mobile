@@ -1,6 +1,8 @@
-import { View, Text, TextInput, Pressable } from 'react-native';
+import { View, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
+import Button from '@/components/Button';
+import Input from '@/components/Input';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -13,38 +15,32 @@ export default function RegisterScreen() {
       <Text className="mb-1 text-3xl font-bold text-blue-600">Create Account</Text>
       <Text className="mb-8 text-gray-500">Join SkyGuard today</Text>
 
-      <TextInput
-        placeholder="Full Name"
-        value={name}
-        onChangeText={setName}
-        className="px-4 py-3 mb-4 border border-gray-300 rounded-lg"
-      />
-      <TextInput
-        placeholder="Email"
+      <Input label="Full Name" placeholder="John Doe" value={name} onChangeText={setName} />
+      <Input
+        label="Email"
+        placeholder="you@example.com"
         value={email}
         onChangeText={setEmail}
-        className="px-4 py-3 mb-4 border border-gray-300 rounded-lg"
         keyboardType="email-address"
         autoCapitalize="none"
       />
-      <TextInput
-        placeholder="Password"
+      <Input
+        label="Password"
+        placeholder="••••••••"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
-        className="px-4 py-3 mb-6 border border-gray-300 rounded-lg"
       />
 
-      <Pressable
-        className="items-center py-4 mb-4 bg-blue-600 rounded-lg"
+      <Button
+        title="Register"
         onPress={() => router.replace('/(tabs)')}
-      >
-        <Text className="font-bold text-white">Register</Text>
-      </Pressable>
+        style={{ marginTop: 8, marginBottom: 16 }}
+      />
 
-      <Pressable onPress={() => router.back()}>
-        <Text className="text-center text-blue-600">Already have an account? Login</Text>
-      </Pressable>
+      <Text className="text-center text-blue-600" onPress={() => router.back()}>
+        Already have an account? Login
+      </Text>
     </View>
   );
 }
