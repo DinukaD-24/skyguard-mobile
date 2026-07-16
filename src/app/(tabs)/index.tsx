@@ -15,7 +15,9 @@ export default function HomeScreen() {
         </View>
 
         {/* Alert Banner */}
-        <Card className="bg-red-50 border border-red-200 mb-6 flex-row items-center p-4">
+        <Card 
+          style={{ backgroundColor: '#FEF2F2', marginBottom: 24, borderColor: '#FECACA', borderWidth: 1, flexDirection: 'row', alignItems: 'center' }}
+        >
           <View className="bg-red-500 rounded-full w-10 h-10 items-center justify-center mr-3">
             <Text className="text-white text-lg">⚠️</Text>
           </View>
@@ -26,7 +28,9 @@ export default function HomeScreen() {
         </Card>
 
         {/* Current Weather Card */}
-        <Card className="bg-blue-600 border border-blue-700 mb-8 items-center shadow-md shadow-blue-900/20 p-8">
+        <Card 
+          style={{ backgroundColor: '#2563EB', marginBottom: 32, alignItems: 'center', shadowColor: '#1E3A8A', shadowOpacity: 0.3, shadowRadius: 10 }}
+        >
           <Text className="text-blue-100 text-lg font-medium mb-1">New York City, NY</Text>
           <Text className="text-white text-[80px] font-bold tracking-tighter mb-1">72°</Text>
           <Text className="text-blue-50 text-xl font-medium mb-6">Partly Cloudy</Text>
@@ -63,7 +67,14 @@ export default function HomeScreen() {
             ].map((item, index) => (
               <Card
                 key={index}
-                className={`p-4 items-center mr-3 min-w-[76px] ${item.active ? 'bg-blue-600 shadow-md shadow-blue-600/30' : 'bg-white shadow-sm border border-slate-100'}`}
+                style={{ 
+                  backgroundColor: item.active ? '#2563EB' : '#FFFFFF', 
+                  marginRight: 12, 
+                  alignItems: 'center', 
+                  minWidth: 76,
+                  borderColor: item.active ? 'transparent' : '#F1F5F9',
+                  borderWidth: 1
+                }}
               >
                 <Text className={`${item.active ? 'text-blue-50' : 'text-slate-500'} text-sm font-medium mb-3`}>{item.time}</Text>
                 <Text className="text-2xl mb-3">{item.icon}</Text>
@@ -88,7 +99,10 @@ export default function HomeScreen() {
               { name: 'Tokyo, Japan', temp: '81°', desc: 'Clear', icon: '☀️' },
               { name: 'Sydney, AU', temp: '68°', desc: 'Cloudy', icon: '☁️' },
             ].map((loc, i) => (
-              <Card key={i} className="p-5 flex-row justify-between items-center bg-white shadow-sm border border-slate-100 mb-1">
+              <Card 
+                key={i} 
+                style={{ backgroundColor: '#FFFFFF', marginBottom: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderColor: '#F1F5F9', borderWidth: 1 }}
+              >
                 <View>
                   <Text className="text-blue-950 font-bold text-lg mb-1">{loc.name}</Text>
                   <Text className="text-slate-500 text-sm font-medium">{loc.desc}</Text>
