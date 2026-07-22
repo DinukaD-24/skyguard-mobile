@@ -6,6 +6,7 @@ import {
   StyleProp,
   ViewStyle,
   GestureResponderEvent,
+  ActivityIndicator,
 } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
@@ -17,6 +18,7 @@ interface ButtonProps {
   variant?: ButtonVariant;
   onPress?: (event: GestureResponderEvent) => void;
   disabled?: boolean;
+  loading?: boolean;
   style?: StyleProp<ViewStyle>;
 }
 
@@ -25,11 +27,15 @@ export default function Button({
   variant = 'primary',
   style,
   disabled,
+  loading,
   ...props
 }: ButtonProps) {
   const theme = useTheme();
 
-  const isDisabled = disabled || variant === 'disabled';
+  const isDisabled =
+  disabled ||
+  loading ||
+  variant === "disabled";
 
   return (
     <Pressable
@@ -51,16 +57,22 @@ export default function Button({
       disabled={isDisabled}
       {...props}
     >
-      <Text
-        style={[
-          styles.text,
-          variant === 'secondary' && {
-            color: '#3C87F7',
-          },
-        ]}
-      >
-        {title}
-      </Text>
+      {loading ? (
+  <ActivityIndicator
+    color={variant === 'secondary' ? '#3C87F7' : '#FFFFFF'}
+  />
+) : (
+  <Text
+    style={[
+      styles.text,
+      variant === 'secondary' && {
+        color: '#3C87F7',
+      },
+    ]}
+  >
+    {title}
+  </Text>
+)}
     </Pressable>
   );
 }
