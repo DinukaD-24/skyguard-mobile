@@ -1,8 +1,27 @@
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'expo-router';
 import Card from '@/components/Card';
+import { authService, User } from '@/services/auth';
 
 export default function HomeScreen() {
+  const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const loadUser = async () => {
+      const userData = await authService.getUser();
+      setUser(userData);
+    };
+    loadUser();
+  }, []);
+
+  const handleLogout = async () => {
+    await authService.logout();
+    router.replace('/login');
+  };
+
   return (
     <SafeAreaView style={styles.screen}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
@@ -11,11 +30,16 @@ export default function HomeScreen() {
         <View style={styles.header}>
           <View>
             <Text style={styles.appName}>SkyGuard</Text>
-            <Text style={styles.appSubtitle}>Good morning ☀️</Text>
+            <Text style={styles.appSubtitle}>Good morning, {user?.name || 'User'} ☀️</Text>
           </View>
-          <TouchableOpacity style={styles.searchBtn}>
-            <Text style={{ fontSize: 18 }}>🔍</Text>
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <TouchableOpacity style={styles.searchBtn}>
+              <Text style={{ fontSize: 18 }}>🔍</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
+              <Text style={{ fontSize: 14, color: '#FFFFFF', fontWeight: '700' }}>Logout</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Alert Banner */}
@@ -118,11 +142,10 @@ export default function HomeScreen() {
   );
 }
 
-const BLUE_PRIMARY   = '#1D6FEB';   // vivid modern blue
-const BLUE_DARK      = '#1251B5';   // deeper navy for accents
-const BLUE_LIGHT     = '#E8F0FD';   // very light blue tint for inactive cards
+const BLUE_PRIMARY   = '#1D6FEB';
+const BLUE_DARK      = '#1251B5';
 const WHITE          = '#FFFFFF';
-const BG             = '#F0F5FF';   // cool blue-tinted background
+const BG             = '#F0F5FF';
 
 const styles = StyleSheet.create({
   screen: {
@@ -160,6 +183,16 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
     elevation: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  logoutBtn: {
+    backgroundColor: '#F43F5E',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 
   /* Alert */
