@@ -3,7 +3,7 @@ import * as SecureStore from 'expo-secure-store';
 
 const getBaseUrl = () => {
   // Update this to your local IP address (e.g. 'http://192.168.1.100:3000') when testing on physical phones.
-  return 'http://10.0.2.2:3000';
+  return 'http://localhost:3000';
 };
 
 const api = axios.create({

@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import api from './api';
 import * as SecureStore from 'expo-secure-store';
 
@@ -12,41 +13,59 @@ export interface AuthResponse {
   user: User;
 }
 
+// Platform-aware storage
+const storage = {
+  async set(key: string, value: string) {
+    if (Platform.OS === 'web') {
+      localStorage.setItem(key, value);
+    } else {
+      await SecureStore.setItemAsync(key, value);
+    }
+  },
+  async get(key: string): Promise<string | null> {
+    if (Platform.OS === 'web') {
+      return localStorage.getItem(key);
+    } else {
+      return await SecureStore.getItemAsync(key);
+    }
+  },
+  async remove(key: string) {
+    if (Platform.OS === 'web') {
+      localStorage.removeItem(key);
+    } else {
+      await SecureStore.deleteItemAsync(key);
+    }
+  },
+};
+
 export const authService = {
   async register(name: string, email: string, password: string): Promise<AuthResponse> {
-    const response = await api.post<AuthResponse>('/auth/register', {
-      name,
-      email,
-      password,
-    });
+    const response = await api.post<AuthResponse>('/auth/register', { name, email, password });
     const { token, user } = response.data;
-    await SecureStore.setItemAsync('user_token', token);
-    await SecureStore.setItemAsync('user_data', JSON.stringify(user));
+    await storage.set('user_token', token);
+    await storage.set('user_data', JSON.stringify(user));
     return response.data;
   },
 
   async login(email: string, password: string): Promise<AuthResponse> {
-    const response = await api.post<AuthResponse>('/auth/login', {
-      email,
-      password,
-    });
+    const response = await api.post<AuthResponse>('/auth/login', { email, password });
     const { token, user } = response.data;
-    await SecureStore.setItemAsync('user_token', token);
-    await SecureStore.setItemAsync('user_data', JSON.stringify(user));
+    await storage.set('user_token', token);
+    await storage.set('user_data', JSON.stringify(user));
     return response.data;
   },
 
   async logout(): Promise<void> {
-    await SecureStore.deleteItemAsync('user_token');
-    await SecureStore.deleteItemAsync('user_data');
+    await storage.remove('user_token');
+    await storage.remove('user_data');
   },
 
   async getToken(): Promise<string | null> {
-    return await SecureStore.getItemAsync('user_token');
+    return await storage.get('user_token');
   },
 
   async getUser(): Promise<User | null> {
-    const data = await SecureStore.getItemAsync('user_data');
+    const data = await storage.get('user_data');
     if (!data) return null;
     try {
       return JSON.parse(data) as User;
