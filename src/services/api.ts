@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
 const getBaseUrl = () => {
@@ -14,9 +15,21 @@ const api = axios.create({
   },
 });
 
+const getToken = async (): Promise<string | null> => {
+  try {
+    if (Platform.OS === 'web') {
+      return localStorage.getItem('user_token');
+    } else {
+      return await SecureStore.getItemAsync('user_token');
+    }
+  } catch {
+    return null;
+  }
+};
+
 api.interceptors.request.use(
   async (config) => {
-    const token = await SecureStore.getItemAsync('user_token');
+    const token = await getToken();
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
