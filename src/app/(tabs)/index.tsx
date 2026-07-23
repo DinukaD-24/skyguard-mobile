@@ -7,63 +7,86 @@ import {
   View,
   Modal,
   TextInput,
-  Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Card from '@/components/Card';
 import { authService, User } from '@/services/auth';
-
-const { width } = Dimensions.get('window');
-
-interface SavedLocation {
-  id: string;
-  name: string;
-  temp: string;
-  desc: string;
-  icon: string;
-}
+import { locationService, LocationItem } from '@/services/locationService';
+import { weatherService, WeatherData } from '@/services/weatherService';
 
 export default function HomeScreen() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [forecastTab, setForecastTab] = useState<'hourly' | 'weekly'>('hourly');
 
-  // Saved Locations State
-  const [locations, setLocations] = useState<SavedLocation[]>([
-    { id: '1', name: 'London, UK', temp: '62°', desc: 'Light Rain', icon: '🌧️' },
-    { id: '2', name: 'Tokyo, Japan', temp: '81°', desc: 'Clear Sky', icon: '☀️' },
-    { id: '3', name: 'Sydney, AU', temp: '68°', desc: 'Partly Cloudy', icon: '☁️' },
-  ]);
+  // Live Weather & Locations State
+  const [currentCity, setCurrentCity] = useState('Colombo');
+  const [weather, setWeather] = useState<WeatherData | null>(null);
+  const [weatherLoading, setWeatherLoading] = useState(true);
+  const [locations, setLocations] = useState<LocationItem[]>([]);
 
-  // Add Location Modal
+  // Modal State
   const [modalVisible, setModalVisible] = useState(false);
   const [newCityName, setNewCityName] = useState('');
+  const [addingCity, setAddingCity] = useState(false);
 
   useEffect(() => {
-    const loadUser = async () => {
-      const userData = await authService.getUser();
-      setUser(userData);
-    };
-    loadUser();
+    loadInitialData();
   }, []);
 
-  const handleAddLocation = () => {
-    if (!newCityName.trim()) return;
-    const newLoc: SavedLocation = {
-      id: Date.now().toString(),
-      name: newCityName.trim(),
-      temp: `${Math.floor(Math.random() * 20) + 65}°`,
-      desc: 'Partly Sunny',
-      icon: '🌤️',
-    };
-    setLocations([...locations, newLoc]);
-    setNewCityName('');
-    setModalVisible(false);
+  const loadInitialData = async () => {
+    const userData = await authService.getUser();
+    setUser(userData);
+
+    // Fetch live weather for Colombo
+    fetchWeatherData('Colombo');
+
+    // Fetch saved locations from PostgreSQL
+    try {
+      const dbLocations = await locationService.getLocations();
+      setLocations(dbLocations);
+    } catch {
+      // token or network check
+    }
   };
 
-  const handleRemoveLocation = (id: string) => {
-    setLocations(locations.filter((loc) => loc.id !== id));
+  const fetchWeatherData = async (city: string) => {
+    setWeatherLoading(true);
+    try {
+      const data = await weatherService.getWeather(city);
+      setWeather(data);
+      setCurrentCity(city);
+    } catch (err) {
+      console.log('Weather fetch failed', err);
+    } finally {
+      setWeatherLoading(false);
+    }
+  };
+
+  const handleAddLocation = async () => {
+    if (!newCityName.trim()) return;
+    setAddingCity(true);
+    try {
+      const created = await locationService.addLocation(newCityName.trim(), 'Saved City');
+      setLocations([created, ...locations]);
+      setNewCityName('');
+      setModalVisible(false);
+    } catch (err) {
+      console.log('Failed to add location', err);
+    } finally {
+      setAddingCity(false);
+    }
+  };
+
+  const handleRemoveLocation = async (id: string) => {
+    try {
+      await locationService.deleteLocation(id);
+      setLocations(locations.filter((loc) => loc.id !== id));
+    } catch (err) {
+      console.log('Failed to delete location', err);
+    }
   };
 
   return (
@@ -98,63 +121,64 @@ export default function HomeScreen() {
               <View style={styles.liveTag}><Text style={styles.liveTagText}>ACTIVE</Text></View>
             </View>
             <Text style={styles.alertBody}>
-              Heavy rain & wind gusts up to 55 mph expected around 4:30 PM.
+              Heavy rain & wind gusts up to 55 km/h expected across southwest districts.
             </Text>
           </View>
         </Card>
 
-        {/* Main Weather Card */}
+        {/* Main Weather Card (Live Data) */}
         <Card style={styles.weatherCard}>
           <View style={styles.circle1} />
           <View style={styles.circle2} />
 
-          <View style={styles.cityRow}>
-            <Text style={styles.cityName}>📍 New York City, NY</Text>
-            <View style={styles.aqiBadge}>
-              <Text style={styles.aqiText}>AQI 38 • Good 🍃</Text>
-            </View>
-          </View>
+          {weatherLoading ? (
+            <ActivityIndicator color="#FFFFFF" size="large" style={{ padding: 40 }} />
+          ) : weather ? (
+            <>
+              <View style={styles.cityRow}>
+                <Text style={styles.cityName}>📍 {weather.city}</Text>
+                <View style={styles.aqiBadge}>
+                  <Text style={styles.aqiText}>AQI {weather.aqi} • {weather.aqiStatus}</Text>
+                </View>
+              </View>
 
-          <Text style={styles.tempText}>74°</Text>
-          
-          <View style={styles.conditionRow}>
-            <Text style={{ fontSize: 24 }}>⛅</Text>
-            <Text style={styles.conditionText}>  Partly Cloudy • Feels like 76°</Text>
-          </View>
+              <Text style={styles.tempText}>{weather.temp}</Text>
+              
+              <View style={styles.conditionRow}>
+                <Text style={{ fontSize: 24 }}>{weather.icon}</Text>
+                <Text style={styles.conditionText}>  {weather.condition}</Text>
+              </View>
 
-          <View style={styles.divider} />
+              <View style={styles.divider} />
 
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Text style={styles.statLabel}>HIGH / LOW</Text>
-              <Text style={styles.statValue}>78° / 64°</Text>
-            </View>
-            <View style={styles.statSeparator} />
-            <View style={styles.statItem}>
-              <Text style={styles.statLabel}>HUMIDITY</Text>
-              <Text style={styles.statValue}>48%</Text>
-            </View>
-            <View style={styles.statSeparator} />
-            <View style={styles.statItem}>
-              <Text style={styles.statLabel}>WIND</Text>
-              <Text style={styles.statValue}>14 mph</Text>
-            </View>
-            <View style={styles.statSeparator} />
-            <View style={styles.statItem}>
-              <Text style={styles.statLabel}>UV INDEX</Text>
-              <Text style={styles.statValue}>5 Mod</Text>
-            </View>
-          </View>
+              <View style={styles.statsRow}>
+                <View style={styles.statItem}>
+                  <Text style={styles.statLabel}>HIGH / LOW</Text>
+                  <Text style={styles.statValue}>{weather.highLow}</Text>
+                </View>
+                <View style={styles.statSeparator} />
+                <View style={styles.statItem}>
+                  <Text style={styles.statLabel}>HUMIDITY</Text>
+                  <Text style={styles.statValue}>{weather.humidity}</Text>
+                </View>
+                <View style={styles.statSeparator} />
+                <View style={styles.statItem}>
+                  <Text style={styles.statLabel}>WIND</Text>
+                  <Text style={styles.statValue}>{weather.wind}</Text>
+                </View>
+              </View>
+            </>
+          ) : null}
         </Card>
 
         {/* AI Guardian Insight Card */}
         <Card style={styles.aiCard}>
           <View style={styles.aiCardHeader}>
             <Text style={styles.aiBadge}>🤖 SKYGUARD AI BRIEFING</Text>
-            <Text style={styles.aiTime}>Just now</Text>
+            <Text style={styles.aiTime}>Live Sync</Text>
           </View>
           <Text style={styles.aiText}>
-            "Atmospheric pressure is dropping steadily (-2.4 hPa). Expect localized rain showers between 4:00 PM and 6:30 PM. Outdoor activities recommended before 3:30 PM."
+            "Atmospheric stability for {currentCity} is currently monitored. Moisture levels suggest brief rain showers around afternoon peak hours. Plan outdoor activities accordingly."
           </Text>
         </Card>
 
@@ -174,7 +198,7 @@ export default function HomeScreen() {
                 onPress={() => setForecastTab('weekly')}
                 style={[styles.forecastTab, forecastTab === 'weekly' && styles.forecastTabActive]}>
                 <Text style={[styles.forecastTabText, forecastTab === 'weekly' && styles.forecastTabTextActive]}>
-                  7 Days
+                  5 Days
                 </Text>
               </TouchableOpacity>
             </View>
@@ -183,13 +207,12 @@ export default function HomeScreen() {
           {forecastTab === 'hourly' ? (
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               {[
-                { time: 'Now', temp: '74°', icon: '⛅', active: true },
-                { time: '1 PM', temp: '76°', icon: '☀️', active: false },
-                { time: '2 PM', temp: '78°', icon: '🌤️', active: false },
-                { time: '3 PM', temp: '77°', icon: '☁️', active: false },
-                { time: '4 PM', temp: '73°', icon: '🌧️', active: false },
-                { time: '5 PM', temp: '70°', icon: '⛈️', active: false },
-                { time: '6 PM', temp: '68°', icon: '🌧️', active: false },
+                { time: 'Now', temp: weather?.temp || '28°', icon: weather?.icon || '⛅', active: true },
+                { time: '1 PM', temp: '29°', icon: '☀️', active: false },
+                { time: '2 PM', temp: '30°', icon: '🌤️', active: false },
+                { time: '3 PM', temp: '29°', icon: '☁️', active: false },
+                { time: '4 PM', temp: '27°', icon: '🌧️', active: false },
+                { time: '5 PM', temp: '26°', icon: '⛈️', active: false },
               ].map((item, index) => (
                 <Card
                   key={index}
@@ -202,13 +225,7 @@ export default function HomeScreen() {
             </ScrollView>
           ) : (
             <View style={styles.weeklyList}>
-              {[
-                { day: 'Today', temp: '78° / 64°', desc: 'Thunderstorms', icon: '⛈️' },
-                { day: 'Tomorrow', temp: '75° / 60°', desc: 'Sunny & Clear', icon: '☀️' },
-                { day: 'Wednesday', temp: '72° / 58°', desc: 'Partly Cloudy', icon: '⛅' },
-                { day: 'Thursday', temp: '79° / 65°', desc: 'Scattered Showers', icon: '🌧️' },
-                { day: 'Friday', temp: '81° / 66°', desc: 'Sunny', icon: '☀️' },
-              ].map((item, idx) => (
+              {weather?.weeklyForecast?.map((item, idx) => (
                 <Card key={idx} style={styles.weeklyRow}>
                   <Text style={styles.weeklyDay}>{item.day}</Text>
                   <View style={styles.weeklyDescRow}>
@@ -222,7 +239,7 @@ export default function HomeScreen() {
           )}
         </View>
 
-        {/* Saved Locations */}
+        {/* Saved Locations (Database Driven) */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Saved Locations ({locations.length})</Text>
@@ -233,13 +250,13 @@ export default function HomeScreen() {
 
           {locations.map((loc) => (
             <Card key={loc.id} style={styles.locationCard}>
-              <View style={styles.locationLeft}>
-                <Text style={styles.locationName}>{loc.name}</Text>
-                <Text style={styles.locationDesc}>{loc.desc}</Text>
-              </View>
+              <TouchableOpacity
+                style={styles.locationLeft}
+                onPress={() => fetchWeatherData(loc.city)}>
+                <Text style={styles.locationName}>{loc.city}</Text>
+                <Text style={styles.locationDesc}>{loc.label} • Tap to view weather</Text>
+              </TouchableOpacity>
               <View style={styles.locationRight}>
-                <Text style={{ fontSize: 26 }}>{loc.icon}</Text>
-                <Text style={styles.locationTemp}>{loc.temp}</Text>
                 <TouchableOpacity
                   onPress={() => handleRemoveLocation(loc.id)}
                   style={styles.deleteBtn}>
@@ -257,11 +274,11 @@ export default function HomeScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Add Saved Location</Text>
-            <Text style={styles.modalSub}>Track weather & hazard alerts for any city</Text>
+            <Text style={styles.modalSub}>Saved to your cloud PostgreSQL database</Text>
 
             <TextInput
               style={styles.modalInput}
-              placeholder="e.g. Paris, France or Tokyo"
+              placeholder="e.g. Kandy, Galle, or Tokyo"
               placeholderTextColor="#94A3B8"
               value={newCityName}
               onChangeText={setNewCityName}
@@ -275,8 +292,13 @@ export default function HomeScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.saveBtn}
-                onPress={handleAddLocation}>
-                <Text style={styles.saveBtnText}>Save City</Text>
+                onPress={handleAddLocation}
+                disabled={addingCity}>
+                {addingCity ? (
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                ) : (
+                  <Text style={styles.saveBtnText}>Save City</Text>
+                )}
               </TouchableOpacity>
             </View>
           </View>
@@ -297,7 +319,6 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   content: { padding: 20, paddingBottom: 40 },
 
-  /* Header */
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -332,7 +353,6 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
 
-  /* Alert */
   alertCard: {
     backgroundColor: '#FFF0F0',
     borderLeftWidth: 4,
@@ -380,7 +400,6 @@ const styles = StyleSheet.create({
     opacity: 0.9,
   },
 
-  /* Main Weather */
   weatherCard: {
     backgroundColor: BLUE_PRIMARY,
     borderRadius: 28,
@@ -480,7 +499,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.20)',
   },
 
-  /* AI Card */
   aiCard: {
     backgroundColor: '#EFF6FF',
     borderColor: '#BFDBFE',
@@ -513,7 +531,6 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
 
-  /* Section */
   section: { marginBottom: 24 },
   sectionHeader: {
     flexDirection: 'row',
@@ -532,7 +549,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 
-  /* Forecast Tabs */
   forecastHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -599,7 +615,6 @@ const styles = StyleSheet.create({
   weeklyDesc: { fontSize: 13, color: '#6B8FC7' },
   weeklyTemp: { fontSize: 14, fontWeight: '800', color: '#0F2167' },
 
-  /* Saved Locations */
   locationCard: {
     backgroundColor: WHITE,
     borderRadius: 18,
@@ -615,11 +630,9 @@ const styles = StyleSheet.create({
   locationName: { color: '#0F2167', fontWeight: '700', fontSize: 15, marginBottom: 2 },
   locationDesc: { color: '#6B8FC7', fontSize: 12 },
   locationRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  locationTemp: { color: '#0F2167', fontSize: 22, fontWeight: '300' },
   deleteBtn: { padding: 4 },
   deleteBtnText: { color: '#94A3B8', fontWeight: '700', fontSize: 14 },
 
-  /* Modal */
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(15, 23, 42, 0.6)',
