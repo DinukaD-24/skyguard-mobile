@@ -8,13 +8,14 @@ import {
   Modal,
   TextInput,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Card from '@/components/Card';
 import { authService, User } from '@/services/auth';
 import { locationService, LocationItem } from '@/services/locationService';
-import { weatherService, WeatherData } from '@/services/weatherService';
+import { weatherService, WeatherData, CityNotFoundError } from '@/services/weatherService';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -66,7 +67,11 @@ export default function HomeScreen() {
       setWeather(data);
       setCurrentCity(city);
     } catch (err) {
-      console.log('Weather fetch failed', err);
+      if (err instanceof CityNotFoundError) {
+        Alert.alert('City Not Found', `Couldn't find weather for "${city}". Check the spelling and try again.`);
+      } else {
+        console.log('Weather fetch failed', err);
+      }
     } finally {
       setWeatherLoading(false);
     }

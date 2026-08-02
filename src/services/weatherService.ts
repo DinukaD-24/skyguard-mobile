@@ -1,5 +1,12 @@
 import api from './api';
 
+export class CityNotFoundError extends Error {
+  constructor(city: string) {
+    super(`City not found: ${city}`);
+    this.name = 'CityNotFoundError';
+  }
+}
+
 export interface WeatherData {
   city: string;
   temp: string;
@@ -45,7 +52,7 @@ export const weatherService = {
         const geoData = await geoRes.json();
 
         if (!geoData.results || geoData.results.length === 0) {
-          throw new Error('City not found');
+          throw new CityNotFoundError(targetCity);
         }
 
         const { latitude, longitude, name: foundCity } = geoData.results[0];
@@ -91,6 +98,11 @@ export const weatherService = {
           weeklyForecast,
         };
       } catch (err) {
+        // An unknown city is a user-facing error, not something to paper
+        // over with placeholder weather — let the screen handle it.
+        if (err instanceof CityNotFoundError) {
+          throw err;
+        }
         console.error('Open-Meteo fetch failed:', err);
         return {
           city: targetCity,

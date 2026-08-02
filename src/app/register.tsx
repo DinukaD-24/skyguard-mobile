@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Button from '@/components/Button';
 import Input from '@/components/Input';
 import ErrorBanner from '@/components/ErrorBanner';
+import RovioTekBrand from '@/components/RovioTekBrand';
 import { authService } from '@/services/auth';
 
 export default function RegisterScreen() {
@@ -82,6 +83,8 @@ export default function RegisterScreen() {
         }}>
         Already have an account? Login
       </Text>
+
+      <RovioTekBrand style={{ marginTop: 48 }} />
     </View>
   );
 }

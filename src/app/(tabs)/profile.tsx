@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Card from '@/components/Card';
+import RovioTekBrand from '@/components/RovioTekBrand';
 import { authService, User } from '@/services/auth';
 
 export default function ProfileScreen() {
@@ -155,6 +156,7 @@ export default function ProfileScreen() {
           <Text style={styles.logoutText}>Log Out of SkyGuard</Text>
         </TouchableOpacity>
 
+        <RovioTekBrand style={{ marginTop: 24 }} />
         <Text style={styles.footerVersion}>SkyGuard v1.2.0 • Build 2026</Text>
       </ScrollView>
     </SafeAreaView>
