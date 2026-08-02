@@ -157,6 +157,7 @@ function predictLandslide(
   earthquake: number,       // Richter magnitude
   proximity: number,        // 0–1 (1 = very close to water/fault)
   soilType: SoilType,
+  district: string,
 ): LandslideResult {
   // ── Feature engineering mirroring trained model ──
   // Weights derived from typical Random Forest feature importances
@@ -207,17 +208,17 @@ function predictLandslide(
   const probability = Math.min(99, Math.max(1, score));
 
   let riskLevel: LandslideResult['riskLevel'] = 'LOW';
-  let advice = `✅ Low landslide risk. Continue routine slope monitoring.`;
+  let advice = `✅ Low landslide risk in ${district}. Continue routine slope monitoring.`;
 
   if (probability >= 75) {
     riskLevel = 'CRITICAL';
-    advice = `🚨 CRITICAL LANDSLIDE RISK! Immediate evacuation of slope areas, hillside homes, and mountain roads. Alert NBRO (National Building Research Organisation) and emergency services.`;
+    advice = `🚨 CRITICAL LANDSLIDE RISK in ${district}! Immediate evacuation of slope areas, hillside homes, and mountain roads. Alert NBRO (National Building Research Organisation) and emergency services.`;
   } else if (probability >= 55) {
     riskLevel = 'HIGH';
-    advice = `⚠️ HIGH LANDSLIDE RISK. Evacuate vulnerable hillside communities. Close mountain roads. Issue NBRO early warning to residents.`;
+    advice = `⚠️ HIGH LANDSLIDE RISK in ${district}. Evacuate vulnerable hillside communities. Close mountain roads. Issue NBRO early warning to residents.`;
   } else if (probability >= 30) {
     riskLevel = 'MODERATE';
-    advice = `⚡ MODERATE LANDSLIDE RISK. Monitor slope conditions actively. Avoid travel on mountain roads during rain. Prepare evacuation plans.`;
+    advice = `⚡ MODERATE LANDSLIDE RISK in ${district}. Monitor slope conditions actively. Avoid travel on mountain roads during rain. Prepare evacuation plans.`;
   }
 
   return { probability, riskLevel, advice, factors };
@@ -248,6 +249,7 @@ export default function DisasterRadarScreen() {
   const [floodResult, setFloodResult] = useState<FloodResult | null>(null);
 
   // ── Landslide predictor state (exact dataset columns) ──
+  const [lsDistrict, setLsDistrict] = useState('Kandy');
   const [lsRainfall, setLsRainfall] = useState('206.18');
   const [lsSlope, setLsSlope] = useState('58.28');
   const [lsSaturation, setLsSaturation] = useState('0.89');
@@ -270,6 +272,7 @@ export default function DisasterRadarScreen() {
         parseFloat(lsEarthquake) || 0,
         parseFloat(lsProximity) || 0,
         lsSoilType,
+        lsDistrict,
       );
       setLsResult(result);
       setLsPredicting(false);
@@ -402,6 +405,11 @@ export default function DisasterRadarScreen() {
             </View>
             <Text style={s.mlTitle}>Landslide Risk Calculator</Text>
             <Text style={s.mlSub}>Dataset features: Rainfall · Slope · Saturation · Vegetation · Seismic · Proximity · Soil Type</Text>
+
+            {/* Feature: District / City */}
+            <Text style={s.mlLabel}>DISTRICT / CITY</Text>
+            <TextInput style={s.mlInput} value={lsDistrict} onChangeText={setLsDistrict}
+              placeholder="e.g. Kandy" placeholderTextColor="#4B6A9B" />
 
             {/* Feature: Rainfall_mm */}
             <Text style={s.mlLabel}>RAINFALL_MM  <Text style={s.rangeHint}>(typical: 50 – 350 mm)</Text></Text>
