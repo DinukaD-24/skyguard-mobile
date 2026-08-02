@@ -1,56 +1,142 @@
-# Welcome to your Expo app 👋
+# SkyGuard — AI-Powered Weather & Disaster Safety Companion
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+SkyGuard is a cross-platform mobile application that unifies real-time weather monitoring, 
+air quality tracking, and AI-driven travel safety planning into a single, location-aware 
+safety companion. Built for Sri Lanka's recurring flood, landslide, and storm risks, SkyGuard 
+helps users make informed decisions before they leave home — not just check the forecast.
 
-## Get started
+**Team:** RovioTek | **Competition:** IDEALIZE 2026 (Open Category) | **Organized by:** AIESEC in University of Moratuwa
 
-1. Install dependencies
+---
 
-   ```bash
-   npm install
-   ```
+## Purpose
 
-2. Start the app
+Existing weather apps show raw numbers. SkyGuard interprets them — combining live meteorological 
+data with an AI-driven safety planner that tells users whether it's actually safe to travel, when, 
+and what precautions to take, alongside emergency preparedness tools for high-risk regions.
 
-   ```bash
-   npx expo start
-   ```
+---
 
-In the output, you'll find options to open the app in a
+## Tech Stack
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+| Layer | Technology |
+|---|---|
+| Mobile Framework | React Native + Expo (SDK 57) |
+| Language | TypeScript |
+| Navigation | Expo Router (file-based routing) |
+| Styling | NativeWind (Tailwind CSS for React Native) |
+| State/Auth | JWT-based session handling, local fallback storage |
+| Weather Data | Open-Meteo Weather API + Open-Meteo Air Quality API |
+| Backend | Node.js + Express (see `skyguard-server` repo) |
+| Database | PostgreSQL via Prisma ORM |
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+This matches the technical architecture outlined in our team proposal.
 
-## Get a fresh project
+---
 
-When you're ready, run:
+## Core Features
+
+### 1. Personalized Home Dashboard
+Live weather and Air Quality Index (AQI) for the user's current or saved locations, an active 
+severe-weather alert banner, and a short AI-generated conditions briefing. Users can save and 
+switch between multiple locations (Home, Work, Travel destinations).
+
+### 2. AI Travel Planner (AI Agent — Open Category Requirement)
+The core AI-driven feature. Users input a **destination** and **travel dates**. The planner:
+- **Input:** destination city, planned travel window
+- **Processing:** cross-references live weather conditions, air quality, and hazard indicators 
+  for the destination and route
+- **Output:** a computed safety score, a recommended travel time window, route-specific advice, 
+  and itemized precautions — generated dynamically per request, not static text
+
+### 3. Safety Hub
+Nearby shelter information, a disaster preparedness checklist, and an offline-ready emergency 
+alert toggle (designed for SMS dispatch when connectivity is lost).
+
+### 4. Saved Locations
+Add, view, and remove saved locations, persisted to the backend per user account, with local 
+fallback storage if the server is temporarily unreachable — the app remains usable offline.
+
+### 5. Secure Authentication
+Register/login flow backed by JWT authentication against our Express backend, with session 
+persistence and graceful fallback if the backend is unavailable.
+
+### 6. Profile & Preferences
+Manage account details and toggle alert preferences — disaster warnings, daily digest, AQI 
+notifications.
+
+---
+
+## AI Agent Workflow (Open Category)
+
+The AI Travel Planner is SkyGuard's core intelligent agent:
+
+1. **Input stage** — user submits a destination and date range via the Planner screen
+2. **Data gathering** — the app fetches live weather, precipitation, and air quality data for 
+   the destination from Open-Meteo
+3. **Risk evaluation** — conditions are scored against safety thresholds (rainfall intensity, 
+   AQI levels, storm proximity) to produce a numeric safety score
+4. **Recommendation generation** — based on the score, the agent outputs a recommended travel 
+   window, specific route precautions, and an itemized safety checklist
+5. **Output display** — results render live in the Planner UI, updating if the user changes 
+   dates or destination
+
+---
+
+## Setup Instructions
+
+### Prerequisites
+- Node.js (LTS, v22.x recommended)
+- npm
+- Expo Go app (for physical device testing) or Android Studio (for emulator)
+
+### Installation
 
 ```bash
-npm run reset-project
+git clone https://github.com/DinukaD-24/skyguard-mobile.git
+cd skyguard-mobile
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### Running the app
 
-### Other setup steps
+```bash
+npx expo start
+```
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+Then choose:
+- Press `w` — open in web browser
+- Press `a` — open in Android emulator (requires Android Studio + configured AVD)
+- Scan the QR code with **Expo Go** on a physical device (same Wi-Fi network required)
 
-## Learn more
+### Backend connection
 
-To learn more about developing your project with Expo, look at the following resources:
+SkyGuard mobile expects the backend server (`skyguard-server`) running locally at 
+`http://localhost:3000` for full functionality (auth, saved locations). Weather data falls back 
+to a direct Open-Meteo call if the backend is unreachable. See `skyguard-server`'s README for 
+backend setup.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+---
 
-## Join the community
+## Project Structure
 
-Join our community of developers creating universal apps.
+src/
+app/ → screens (Expo Router file-based routing)
+(tabs)/ → main app tabs: dashboard, planner, safety, profile
+login.tsx → login screen
+register.tsx → registration screen
+components/ → shared UI components (Button, Input, Card)
+services/ → API clients (auth, weather, locations)
+hooks/ → custom React hooks
+constants/ → theme, colors, config
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+---
+
+## Team
+
+RovioTek — Informatics Institute of Technology (IIT)
+- I. P. Dinuka Daksitha Ilangakoon (Team Lead)
+- Nimuthu Sipsara Witharana
+- Kattadige Tharana Hasintha Mabula
+- S.N.H.M. Anuruddha Shanaka
+- I.D. Pasindu Tharaka Warnasiri
