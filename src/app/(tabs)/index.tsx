@@ -23,9 +23,16 @@ export default function HomeScreen() {
 
   // Live Weather & Locations State
   const [currentCity, setCurrentCity] = useState('Colombo');
+  const [searchCityQuery, setSearchCityQuery] = useState('');
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [weatherLoading, setWeatherLoading] = useState(true);
   const [locations, setLocations] = useState<LocationItem[]>([]);
+
+  const handleSearchCity = () => {
+    if (!searchCityQuery.trim()) return;
+    fetchWeatherData(searchCityQuery.trim());
+    setSearchCityQuery('');
+  };
 
   // Modal State
   const [modalVisible, setModalVisible] = useState(false);
@@ -108,6 +115,23 @@ export default function HomeScreen() {
               <Text style={{ fontSize: 18 }}>👤</Text>
             </TouchableOpacity>
           </View>
+        </View>
+
+        {/* Professional City Weather Search Bar */}
+        <View style={styles.searchBarContainer}>
+          <Text style={styles.searchBarIcon}>🔍</Text>
+          <TextInput
+            style={styles.searchBarInput}
+            placeholder="Search any city (e.g. Kandy, Tokyo, London)..."
+            placeholderTextColor="#94A3B8"
+            value={searchCityQuery}
+            onChangeText={setSearchCityQuery}
+            onSubmitEditing={handleSearchCity}
+            returnKeyType="search"
+          />
+          <TouchableOpacity style={styles.searchSubmitBtn} onPress={handleSearchCity}>
+            <Text style={styles.searchSubmitText}>Search</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Severe Alert Banner */}
@@ -248,8 +272,8 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
 
-          {locations.map((loc) => (
-            <Card key={loc.id} style={styles.locationCard}>
+          {locations.map((loc, idx) => (
+            <Card key={loc.id ? `${loc.id}-${idx}` : `loc-${idx}`} style={styles.locationCard}>
               <TouchableOpacity
                 style={styles.locationLeft}
                 onPress={() => fetchWeatherData(loc.city)}>
@@ -351,6 +375,45 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#DDE8FC',
     elevation: 2,
+  },
+
+  searchBarContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: WHITE,
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: '#DDE8FC',
+    marginBottom: 20,
+    shadowColor: BLUE_PRIMARY,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  searchBarIcon: {
+    fontSize: 16,
+    marginRight: 10,
+  },
+  searchBarInput: {
+    flex: 1,
+    fontSize: 14,
+    color: '#0F2167',
+    paddingVertical: 10,
+  },
+  searchSubmitBtn: {
+    backgroundColor: BLUE_PRIMARY,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 12,
+    marginLeft: 6,
+  },
+  searchSubmitText: {
+    color: WHITE,
+    fontWeight: '700',
+    fontSize: 13,
   },
 
   alertCard: {

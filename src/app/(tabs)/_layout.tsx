@@ -39,6 +39,24 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="planner"
+        options={{
+          title: 'AI Travel',
+          tabBarIcon: ({ focused }) => (
+            <Text style={{ fontSize: focused ? 22 : 18 }}>✈️</Text>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="safety"
+        options={{
+          title: 'Emergency',
+          tabBarIcon: ({ focused }) => (
+            <Text style={{ fontSize: focused ? 22 : 18 }}>🛡️</Text>
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile & Settings',

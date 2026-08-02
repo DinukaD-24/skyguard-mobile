@@ -29,7 +29,7 @@ export const locationService = {
       return response.data;
     } catch {
       const newItem: LocationItem = {
-        id: Date.now().toString(),
+        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         userId: '1',
         city,
         label: label || 'Saved Location',
