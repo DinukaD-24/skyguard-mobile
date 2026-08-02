@@ -71,7 +71,15 @@ export default function RegisterScreen() {
         style={{ marginTop: 8, marginBottom: 16 }}
       />
 
-      <Text className="text-center text-blue-600" onPress={() => router.back()}>
+      <Text
+        className="text-center text-blue-600"
+        onPress={() => {
+          if (router.canGoBack()) {
+            router.back();
+          } else {
+            router.replace('/login');
+          }
+        }}>
         Already have an account? Login
       </Text>
     </View>

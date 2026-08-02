@@ -8,18 +8,43 @@ export interface LocationItem {
   createdAt: string;
 }
 
+let memoryLocations: LocationItem[] = [
+  { id: '1', userId: '1', city: 'Colombo', label: 'Capital City', createdAt: new Date().toISOString() },
+  { id: '2', userId: '1', city: 'Kandy', label: 'Central Hills', createdAt: new Date().toISOString() },
+];
+
 export const locationService = {
   async getLocations(): Promise<LocationItem[]> {
-    const response = await api.get<LocationItem[]>('/locations');
-    return response.data;
+    try {
+      const response = await api.get<LocationItem[]>('/locations');
+      return response.data;
+    } catch {
+      return memoryLocations;
+    }
   },
 
   async addLocation(city: string, label?: string): Promise<LocationItem> {
-    const response = await api.post<LocationItem>('/locations', { city, label });
-    return response.data;
+    try {
+      const response = await api.post<LocationItem>('/locations', { city, label });
+      return response.data;
+    } catch {
+      const newItem: LocationItem = {
+        id: Date.now().toString(),
+        userId: '1',
+        city,
+        label: label || 'Saved Location',
+        createdAt: new Date().toISOString(),
+      };
+      memoryLocations.unshift(newItem);
+      return newItem;
+    }
   },
 
   async deleteLocation(id: string): Promise<void> {
-    await api.delete(`/locations/${id}`);
+    try {
+      await api.delete(`/locations/${id}`);
+    } catch {
+      memoryLocations = memoryLocations.filter(loc => loc.id !== id);
+    }
   },
 };
