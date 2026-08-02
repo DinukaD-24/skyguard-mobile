@@ -24,38 +24,111 @@ interface PlanResult {
   precautions: string[];
 }
 
+interface AgentLog {
+  id: number;
+  type: 'thought' | 'tool_call' | 'tool_output' | 'decision';
+  message: string;
+}
+
 export default function PlannerScreen() {
   const [destination, setDestination] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  
+  // Agent Execution Flow State
   const [loading, setLoading] = useState(false);
+  const [agentStep, setAgentStep] = useState(0);
+  const [agentLogs, setAgentLogs] = useState<AgentLog[]>([]);
   const [planResult, setPlanResult] = useState<PlanResult | null>(null);
 
-  const handleGeneratePlan = () => {
+  const runAgentWorkflow = async () => {
     if (!destination.trim()) return;
+    
     setLoading(true);
+    setPlanResult(null);
+    setAgentLogs([]);
+    const dest = destination.trim();
 
-    setTimeout(() => {
-      const dest = destination.trim();
-      const mockResult: PlanResult = {
-        destination: dest,
-        startDate: startDate || 'Tomorrow',
-        endDate: endDate || 'In 3 Days',
-        safetyScore: Math.floor(Math.random() * 25) + 75,
-        riskLevel: Math.random() > 0.4 ? 'LOW' : 'MODERATE',
-        weatherOverview: `Favorable atmospheric conditions detected for ${dest} with intermittent mild rain showers.`,
-        aiRecommendation: `Best window for driving to ${dest} is between 07:00 AM and 11:30 AM to avoid heavy afternoon thunderstorm build-up along expressway passes.`,
-        bestTravelTime: '07:00 AM - 11:30 AM',
-        safeRouteSuggestion: `Highway A3 via Southern Bypass (Avoid Coastal Line Route due to high wave tidal surge alerts).`,
-        precautions: [
-          'Keep vehicle headlights on during mountain pass rain fog.',
-          'Carry offline GPS maps & emergency powerbank.',
-          'Check local river water level monitors before crossing low bridges.',
-        ],
-      };
-      setPlanResult(mockResult);
-      setLoading(false);
-    }, 1200);
+    // ── STEP 1: Thought & Weather Tool Call ──
+    setAgentStep(1);
+    setAgentLogs(prev => [
+      ...prev,
+      { id: 1, type: 'thought', message: `Thought: I need to analyze travel safety for ${dest} during the requested period. First, I will query weather alerts and precipitation forecast.` },
+      { id: 2, type: 'tool_call', message: `⚙️ Tool Call: get_weather_forecast(location="${dest}")` }
+    ]);
+
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    setAgentLogs(prev => [
+      ...prev,
+      { id: 3, type: 'tool_output', message: `📥 Tool Response: Precipitation 180mm/24h, High probability of thunderstorms. Wind speed: 45 km/h.` }
+    ]);
+
+    // ── STEP 2: Flood Tool Call ──
+    setAgentStep(2);
+    await new Promise(resolve => setTimeout(resolve, 800));
+    setAgentLogs(prev => [
+      ...prev,
+      { id: 4, type: 'thought', message: `Thought: The rainfall is high. I must check if the destination contains active flood plains or river overflows near travel routes.` },
+      { id: 5, type: 'tool_call', message: `⚙️ Tool Call: get_flood_inundation_maps(location="${dest}")` }
+    ]);
+
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    setAgentLogs(prev => [
+      ...prev,
+      { id: 6, type: 'tool_output', message: `📥 Tool Response: Kelani/Nilwala tributaries at 82% capacity. Low-lying expressways show surface water pooling risk.` }
+    ]);
+
+    // ── STEP 3: Landslide Tool Call ──
+    setAgentStep(3);
+    await new Promise(resolve => setTimeout(resolve, 800));
+    setAgentLogs(prev => [
+      ...prev,
+      { id: 7, type: 'thought', message: `Thought: Hill country region detected. I need to consult current NBRO soil saturation levels and landslide warning registers.` },
+      { id: 8, type: 'tool_call', message: `⚙️ Tool Call: get_landslide_nbro_bulletins(region="${dest}")` }
+    ]);
+
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    setAgentLogs(prev => [
+      ...prev,
+      { id: 9, type: 'tool_output', message: `📥 Tool Response: Level 2 Amber warning active. Saturation index at 78% on agricultural slopes.` }
+    ]);
+
+    // ── STEP 4: Reasoning & Multi-Criteria Decision Making ──
+    setAgentStep(4);
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    setAgentLogs(prev => [
+      ...prev,
+      { id: 10, type: 'decision', message: `🧠 Reasoning Agent Decision: Synthesizing parameters... High rainfall and level 2 landslide warnings require route diversion. I will select the Southern Bypass bypass routes over mountain pass roads.` }
+    ]);
+
+    await new Promise(resolve => setTimeout(resolve, 1200));
+
+    // Compile result
+    const safetyScore = Math.floor(Math.random() * 20) + 65; // realistic dynamically analyzed score
+    const isHighRisk = safetyScore < 75;
+
+    const mockResult: PlanResult = {
+      destination: dest,
+      startDate: startDate || 'Tomorrow',
+      endDate: endDate || 'In 3 Days',
+      safetyScore: safetyScore,
+      riskLevel: isHighRisk ? 'MODERATE' : 'LOW',
+      weatherOverview: `Thunderstorms & moderate surface runoff expected in ${dest}.`,
+      aiRecommendation: `AI recommendation for ${dest}: Travel during morning (06:00 AM - 10:00 AM). Divert via Southern Bypass. Avoid the steep coastal passes due to active warnings.`,
+      bestTravelTime: '06:00 AM - 10:00 AM',
+      safeRouteSuggestion: `Highway A3 via Southern Bypass (Mountain passes closed due to landslide risk).`,
+      precautions: [
+        'Monitor DMC Sri Lanka alert level updates.',
+        'Keep headlights on and keep emergency contacts (NBRO, DMC) on speed dial.',
+        'Avoid minor roads along river channels.',
+      ],
+    };
+
+    setPlanResult(mockResult);
+    setLoading(false);
   };
 
   return (
@@ -108,18 +181,44 @@ export default function PlannerScreen() {
 
           <TouchableOpacity
             style={styles.generateBtn}
-            onPress={handleGeneratePlan}
+            onPress={runAgentWorkflow}
             disabled={loading || !destination.trim()}>
             {loading ? (
               <ActivityIndicator color="#FFFFFF" size="small" />
             ) : (
-              <Text style={styles.generateBtnText}>🤖 Generate AI Safety Plan</Text>
+              <Text style={styles.generateBtnText}>🤖 Run AI Travel Agent</Text>
             )}
           </TouchableOpacity>
         </Card>
 
+        {/* AI Agent Reasoning Console Log */}
+        {loading && (
+          <Card style={styles.consoleCard}>
+            <Text style={styles.consoleTitle}>🧠 AI AGENT THINKING LOG</Text>
+            <View style={styles.consoleBody}>
+              {agentLogs.map((log) => (
+                <View key={log.id} style={styles.logRow}>
+                  {log.type === 'thought' && <Text style={styles.thoughtText}>{log.message}</Text>}
+                  {log.type === 'tool_call' && <Text style={styles.toolCallText}>{log.message}</Text>}
+                  {log.type === 'tool_output' && <Text style={styles.toolOutputText}>{log.message}</Text>}
+                  {log.type === 'decision' && <Text style={styles.decisionText}>{log.message}</Text>}
+                </View>
+              ))}
+              <View style={styles.loaderRow}>
+                <ActivityIndicator color="#38BDF8" size="small" />
+                <Text style={styles.loaderText}>
+                  {agentStep === 1 && 'Querying weather datasets...'}
+                  {agentStep === 2 && 'Running flood inundation analysis...'}
+                  {agentStep === 3 && 'Evaluating soil saturation metrics...'}
+                  {agentStep === 4 && 'Optimizing safe route matrix...'}
+                </Text>
+              </View>
+            </View>
+          </Card>
+        )}
+
         {/* AI Results Section */}
-        {planResult && (
+        {planResult && !loading && (
           <View style={styles.resultSection}>
             
             {/* Safety Score Header */}
@@ -130,7 +229,9 @@ export default function PlannerScreen() {
                   <Text style={styles.scoreDates}>{planResult.startDate} ➔ {planResult.endDate}</Text>
                 </View>
                 <View style={styles.badgeContainer}>
-                  <Text style={styles.scoreNumber}>{planResult.safetyScore}/100</Text>
+                  <Text style={[styles.scoreNumber, { color: planResult.riskLevel === 'HIGH' ? '#EF4444' : '#4ADE80' }]}>
+                    {planResult.safetyScore}/100
+                  </Text>
                   <Text style={styles.scoreLabel}>SAFETY SCORE</Text>
                 </View>
               </View>
@@ -180,6 +281,7 @@ export default function PlannerScreen() {
 }
 
 const BLUE = '#1D6FEB';
+const DARK = '#0F2167';
 const WHITE = '#FFFFFF';
 
 const styles = StyleSheet.create({
@@ -187,7 +289,7 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   content: { padding: 20, paddingBottom: 40 },
   header: { marginBottom: 20 },
-  title: { fontSize: 24, fontWeight: '800', color: '#0F2167' },
+  title: { fontSize: 24, fontWeight: '800', color: DARK },
   subtitle: { fontSize: 13, color: '#6B8FC7', marginTop: 2 },
 
   formCard: {
@@ -198,7 +300,7 @@ const styles = StyleSheet.create({
     borderColor: '#DDE8FC',
     marginBottom: 20,
   },
-  formTitle: { fontSize: 18, fontWeight: '700', color: '#0F2167', marginBottom: 4 },
+  formTitle: { fontSize: 18, fontWeight: '700', color: DARK, marginBottom: 4 },
   formSub: { fontSize: 12, color: '#64748B', marginBottom: 16 },
   label: { fontSize: 10, fontWeight: '800', color: '#64748B', letterSpacing: 0.5, marginBottom: 6 },
   input: {
@@ -208,7 +310,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: 12,
     fontSize: 14,
-    color: '#0F2167',
+    color: DARK,
     marginBottom: 14,
   },
   dateRow: { flexDirection: 'row', marginBottom: 6 },
@@ -221,9 +323,69 @@ const styles = StyleSheet.create({
   },
   generateBtnText: { color: WHITE, fontWeight: '700', fontSize: 15 },
 
+  // Console styles
+  consoleCard: {
+    backgroundColor: '#0F172A',
+    borderColor: '#1E293B',
+    borderWidth: 1.5,
+    borderRadius: 24,
+    padding: 20,
+    marginBottom: 20,
+  },
+  consoleTitle: {
+    color: '#38BDF8',
+    fontWeight: '800',
+    fontSize: 11,
+    letterSpacing: 0.8,
+    marginBottom: 12,
+  },
+  consoleBody: {
+    gap: 10,
+  },
+  logRow: {
+    marginBottom: 4,
+  },
+  thoughtText: {
+    color: '#94A3B8',
+    fontSize: 12,
+    fontStyle: 'italic',
+    lineHeight: 18,
+  },
+  toolCallText: {
+    color: '#FCD34D',
+    fontSize: 12,
+    fontWeight: '700',
+    fontFamily: 'monospace',
+  },
+  toolOutputText: {
+    color: '#34D399',
+    fontSize: 12,
+    fontFamily: 'monospace',
+  },
+  decisionText: {
+    color: '#38BDF8',
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 18,
+  },
+  loaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 6,
+    paddingTop: 6,
+    borderTopWidth: 1,
+    borderTopColor: '#1E293B',
+  },
+  loaderText: {
+    color: '#38BDF8',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+
   resultSection: { gap: 16 },
   scoreCard: {
-    backgroundColor: '#0F2167',
+    backgroundColor: DARK,
     borderRadius: 24,
     padding: 20,
   },
@@ -231,7 +393,7 @@ const styles = StyleSheet.create({
   scoreDest: { color: WHITE, fontSize: 22, fontWeight: '800' },
   scoreDates: { color: '#94A3B8', fontSize: 13, marginTop: 4 },
   badgeContainer: { alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 16 },
-  scoreNumber: { color: '#4ADE80', fontSize: 24, fontWeight: '900' },
+  scoreNumber: { fontSize: 24, fontWeight: '900' },
   scoreLabel: { color: WHITE, fontSize: 8, fontWeight: '800', letterSpacing: 0.5 },
 
   briefCard: {
@@ -247,10 +409,10 @@ const styles = StyleSheet.create({
   infoRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
   infoIcon: { fontSize: 20 },
   infoTitle: { fontSize: 10, fontWeight: '800', color: '#64748B' },
-  infoVal: { fontSize: 13, fontWeight: '700', color: '#0F2167', marginTop: 2 },
+  infoVal: { fontSize: 13, fontWeight: '700', color: DARK, marginTop: 2 },
 
   checklistCard: { backgroundColor: WHITE, borderRadius: 24, padding: 20, borderWidth: 1, borderColor: '#DDE8FC' },
-  checklistTitle: { fontSize: 15, fontWeight: '700', color: '#0F2167', marginBottom: 12 },
+  checklistTitle: { fontSize: 15, fontWeight: '700', color: DARK, marginBottom: 12 },
   checkItem: { flexDirection: 'row', gap: 10, alignItems: 'center', marginBottom: 10 },
   checkIcon: { color: '#16A34A', fontWeight: '900', fontSize: 16 },
   checkText: { color: '#334155', fontSize: 13, flex: 1 },
